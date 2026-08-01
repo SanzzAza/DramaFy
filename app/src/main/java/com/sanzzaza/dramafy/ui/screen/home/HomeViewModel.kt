@@ -3,14 +3,13 @@ package com.sanzzaza.dramafy.ui.screen.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sanzzaza.dramafy.data.local.PreferencesRepository
-import com.sanzzaza.dramafy.data.model.BookMallResponse
+import com.sanzzaza.dramafy.data.model.DramaGroup
 import com.sanzzaza.dramafy.data.repository.DramaRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -18,7 +17,7 @@ sealed interface HomeUiState {
     data object Loading : HomeUiState
     data class Error(val message: String) : HomeUiState
     data class Success(
-        val data: BookMallResponse,
+        val groups: List<DramaGroup>,
         val language: String
     ) : HomeUiState
 }
@@ -57,7 +56,7 @@ class HomeViewModel @Inject constructor(
             val result = repository.bookMall(lang)
             _state.value = result.fold(
                 onSuccess = { HomeUiState.Success(it, lang) },
-                onFailure = { HomeUiState.Error(it.message ?: "Failed to load") }
+                onFailure = { HomeUiState.Error(it.message ?: "Failed to load home feed") }
             )
         }
     }

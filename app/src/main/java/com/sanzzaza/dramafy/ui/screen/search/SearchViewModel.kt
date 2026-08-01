@@ -3,7 +3,7 @@ package com.sanzzaza.dramafy.ui.screen.search
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sanzzaza.dramafy.data.local.PreferencesRepository
-import com.sanzzaza.dramafy.data.model.SearchItemDto
+import com.sanzzaza.dramafy.data.model.Drama
 import com.sanzzaza.dramafy.data.repository.DramaRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -18,7 +18,7 @@ import javax.inject.Inject
 data class SearchUiState(
     val query: String = "",
     val isLoading: Boolean = false,
-    val results: List<SearchItemDto> = emptyList(),
+    val results: List<Drama> = emptyList(),
     val hasMore: Boolean = false,
     val error: String? = null
 )
@@ -61,7 +61,7 @@ class SearchViewModel @Inject constructor(
         suggestJob = viewModelScope.launch {
             delay(250)
             val res = repository.suggest(q, language)
-            res.onSuccess { _suggestions.value = it.suggestions.filter { s -> s.contains(q, ignoreCase = true) }.take(8) }
+            res.onSuccess { _suggestions.value = it.query_result.take(8) }
         }
     }
 
@@ -81,7 +81,8 @@ class SearchViewModel @Inject constructor(
             val res = repository.search(q, language, offset = offset, limit = 30)
             res.fold(
                 onSuccess = { resp ->
-                    val merged = if (reset) resp.items else _state.value.results + resp.items
+                    val newItems = resp.items.map(Drama::fromSearch)
+                    val merged = if (reset) newItems else _state.value.results + newItems
                     _state.value = _state.value.copy(
                         isLoading = false,
                         results = merged,

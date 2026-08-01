@@ -3,7 +3,7 @@ package com.sanzzaza.dramafy.ui.screen.language
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sanzzaza.dramafy.data.local.PreferencesRepository
-import com.sanzzaza.dramafy.data.model.LanguageDto
+import com.sanzzaza.dramafy.data.model.Language
 import com.sanzzaza.dramafy.data.repository.DramaRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,7 +17,7 @@ sealed interface LanguageUiState {
     data object Loading : LanguageUiState
     data class Error(val message: String) : LanguageUiState
     data class Success(
-        val languages: List<LanguageDto>,
+        val languages: List<Language>,
         val selected: String
     ) : LanguageUiState
 }
@@ -41,7 +41,7 @@ class LanguageViewModel @Inject constructor(
             res.fold(
                 onSuccess = { list ->
                     val merged = if (list.any { it.code == current }) list
-                    else listOf(LanguageDto(code = current, name = current)) + list
+                    else listOf(Language(current, current)) + list
                     _state.value = LanguageUiState.Success(merged, current)
                 },
                 onFailure = { _state.value = LanguageUiState.Error(it.message ?: "Failed") }

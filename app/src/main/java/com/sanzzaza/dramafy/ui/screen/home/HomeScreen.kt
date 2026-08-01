@@ -23,17 +23,18 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.sanzzaza.dramafy.data.model.BookGroupDto
-import com.sanzzaza.dramafy.ui.component.BannerCarousel
+import com.sanzzaza.dramafy.data.model.Drama
+import com.sanzzaza.dramafy.data.model.DramaGroup
 import com.sanzzaza.dramafy.ui.component.BookPosterCard
 import com.sanzzaza.dramafy.ui.component.ErrorState
+import com.sanzzaza.dramafy.ui.component.FeaturedHero
 import com.sanzzaza.dramafy.ui.component.LoadingState
 import com.sanzzaza.dramafy.ui.component.SectionHeader
 
@@ -46,6 +47,7 @@ fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val langLabel = (state as? HomeUiState.Success)?.language?.uppercase() ?: "EN"
 
     Scaffold(
         topBar = {
@@ -64,13 +66,13 @@ fun HomeScreen(
                         shape = RoundedCornerShape(50)
                     ) {
                         Text(
-                            text = state.languageOrDefault(),
+                            text = langLabel,
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                         )
                     }
-                    Spacer(Modifier.padding(horizontal = 4.dp))
+                    Spacer(Modifier.padding(horizontal = 6.dp))
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = Color.Transparent
@@ -79,14 +81,16 @@ fun HomeScreen(
         },
         containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
-        Box(modifier = Modifier
-            .fillMaxSize()
-            .padding(padding)) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+        ) {
             when (val s = state) {
                 is HomeUiState.Loading -> LoadingState()
                 is HomeUiState.Error -> ErrorState(s.message, onRetry = viewModel::refresh)
                 is HomeUiState.Success -> HomeContent(
-                    state = s,
+                    groups = s.groups,
                     onBookClick = onBookClick,
                     onSearchClick = onSearchClick
                 )
@@ -95,18 +99,14 @@ fun HomeScreen(
     }
 }
 
-private fun HomeUiState.languageOrDefault(): String = when (this) {
-    is HomeUiState.Success -> language.uppercase()
-    else -> "EN"
-}
-
 @Composable
 private fun HomeContent(
-    state: HomeUiState.Success,
+    groups: List<DramaGroup>,
     onBookClick: (String) -> Unit,
     onSearchClick: () -> Unit
 ) {
-    val data = state.data
+    val featured: List<Drama> = remember(groups) { groups.firstOrNull()?.dramas?.take(5) ?: emptyList() }
+
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -149,42 +149,23 @@ private fun HomeContent(
             }
         }
 
-        if (data.banners.isNotEmpty()) {
+        if (featured.isNotEmpty()) {
             item {
-                BannerCarousel(
-                    banners = data.banners,
-                    onBannerClick = { onBookClick(it.bookId) }
+                FeaturedHero(
+                    items = featured,
+                    onItemClick = { onBookClick(it.id) }
                 )
-            }
-            item { Spacer(Modifier.height(8.dp)) }
-        }
-
-        // Trending horizontal list (first group)
-        val firstGroup = data.groups.firstOrNull { g -> g.books.isNotEmpty() }
-        if (firstGroup != null) {
-            item {
-                SectionHeader(
-                    title = "Trending Now",
-                    subtitle = "Top picks for you"
-                )
-            }
-            item {
-                BookRow(
-                    group = firstGroup,
-                    onBookClick = onBookClick
-                )
+                Spacer(Modifier.height(8.dp))
             }
         }
 
-        // Remaining groups (skip empty) — render each group as a single item with Column inside
-        val remainingGroups = data.groups.drop(
-            if (data.groups.firstOrNull() == firstGroup && firstGroup != null) 1 else 0
-        ).filter { it.books.isNotEmpty() }
-        items(remainingGroups, key = { it.id.ifBlank { it.name } }) { group ->
+        // All groups
+        items(items = groups, key = { it.id }) { group ->
+            if (group.dramas.isEmpty()) return@items
             Column {
-                SectionHeader(title = group.name.ifBlank { "Recommended" })
+                SectionHeader(title = group.title)
                 BookRow(
-                    group = group,
+                    items = group.dramas,
                     onBookClick = onBookClick
                 )
             }
@@ -194,17 +175,17 @@ private fun HomeContent(
 
 @Composable
 private fun BookRow(
-    group: BookGroupDto,
+    items: List<Drama>,
     onBookClick: (String) -> Unit
 ) {
     LazyRow(
         contentPadding = PaddingValues(horizontal = 20.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        items(group.books, key = { it.id }) { book ->
+        items(items, key = { it.id }) { drama ->
             BookPosterCard(
-                item = book,
-                onClick = { onBookClick(book.id) }
+                item = drama,
+                onClick = { onBookClick(drama.id) }
             )
         }
     }

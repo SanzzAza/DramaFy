@@ -1,10 +1,9 @@
 package com.sanzzaza.dramafy.data.api
 
-import com.sanzzaza.dramafy.data.model.BookDetailDto
+import com.sanzzaza.dramafy.data.model.BookDetailResponse
 import com.sanzzaza.dramafy.data.model.BookMallResponse
 import com.sanzzaza.dramafy.data.model.BookMallTabsResponse
-import com.sanzzaza.dramafy.data.model.LanguageDto
-import com.sanzzaza.dramafy.data.model.MultiVideoResponse
+import com.sanzzaza.dramafy.data.model.LanguagesResponse
 import com.sanzzaza.dramafy.data.model.SearchResponse
 import com.sanzzaza.dramafy.data.model.SeriesResponse
 import com.sanzzaza.dramafy.data.model.SuggestResponse
@@ -14,7 +13,7 @@ import retrofit2.http.Query
 interface MeloloApi {
 
     @GET("v1/languages")
-    suspend fun getLanguages(): List<LanguageDto>
+    suspend fun getLanguages(): LanguagesResponse
 
     @GET("v1/search")
     suspend fun search(
@@ -45,7 +44,7 @@ interface MeloloApi {
     suspend fun getBook(
         @Query("id") id: String,
         @Query("lang") lang: String
-    ): BookDetailDto
+    ): BookDetailResponse
 
     @GET("v1/series")
     suspend fun getSeries(
@@ -57,5 +56,5 @@ interface MeloloApi {
     suspend fun getMultiVideo(
         @Query("id") id: String,
         @Query("lang") lang: String
-    ): MultiVideoResponse
+    ): SeriesResponse
 }

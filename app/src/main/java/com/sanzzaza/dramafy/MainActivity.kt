@@ -7,7 +7,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,9 +14,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -29,6 +28,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -60,11 +60,10 @@ class MainActivity : ComponentActivity() {
         setContent {
             val appVm: AppViewModel = hiltViewModel()
             val darkMode by appVm.darkMode.collectAsStateWithLifecycle()
-            val systemDark = androidx.compose.foundation.isSystemInDarkTheme()
+            // Default = dark. Light only when user explicitly chose it.
             val useDark = when (darkMode) {
                 "light" -> false
-                "dark" -> true
-                else -> systemDark
+                else -> true
             }
             DramaFyTheme(darkTheme = useDark) {
                 AppRoot()
@@ -86,7 +85,12 @@ private fun AppRoot() {
             if (showBottomBar) {
                 BottomBar(
                     currentRoute = currentRoute,
-                    onHome = { navController.navigate(Routes.HOME) { launchSingleTop = true; popUpTo(Routes.HOME) { inclusive = false } } },
+                    onHome = {
+                        navController.navigate(Routes.HOME) {
+                            launchSingleTop = true
+                            popUpTo(Routes.HOME) { inclusive = false }
+                        }
+                    },
                     onSearch = { navController.navigate(Routes.SEARCH) { launchSingleTop = true } },
                     onBookmarks = { navController.navigate(Routes.BOOKMARKS) { launchSingleTop = true } }
                 )
@@ -171,11 +175,11 @@ private fun BottomBar(
             BarItem(
                 icon = Icons.Filled.Search,
                 label = "Search",
-                selected = false,
+                selected = currentRoute == Routes.SEARCH,
                 onClick = onSearch
             )
             BarItem(
-                icon = Icons.Filled.Bookmark,
+                icon = Icons.Outlined.BookmarkBorder,
                 label = "Saved",
                 selected = currentRoute == Routes.BOOKMARKS,
                 onClick = onBookmarks
@@ -193,16 +197,14 @@ private fun BarItem(
 ) {
     val tint = if (selected) MaterialTheme.colorScheme.primary
     else MaterialTheme.colorScheme.onSurfaceVariant
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Box(
             modifier = Modifier
                 .size(40.dp)
                 .clip(CircleShape)
                 .background(
                     if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
-                    else androidx.compose.ui.graphics.Color.Transparent
+                    else Color.Transparent
                 ),
             contentAlignment = Alignment.Center
         ) {
@@ -212,7 +214,9 @@ private fun BarItem(
         }
         Text(
             text = label,
-            style = MaterialTheme.typography.labelSmall.copy(fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal),
+            style = MaterialTheme.typography.labelSmall.copy(
+                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal
+            ),
             color = tint
         )
     }

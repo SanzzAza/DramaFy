@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayCircle
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -30,12 +31,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import com.sanzzaza.dramafy.data.model.SearchItemDto
+import com.sanzzaza.dramafy.data.model.Drama
 import com.sanzzaza.dramafy.util.Formatters
 
 @Composable
 fun BookPosterCard(
-    item: SearchItemDto,
+    item: Drama,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -54,7 +55,7 @@ fun BookPosterCard(
                     .clip(RoundedCornerShape(10.dp))
                     .background(MaterialTheme.colorScheme.surfaceVariant)
             ) {
-                if (!item.cover.isNullOrBlank()) {
+                if (item.cover.isNotBlank()) {
                     AsyncImage(
                         model = item.cover,
                         contentDescription = item.title,
@@ -62,7 +63,6 @@ fun BookPosterCard(
                         modifier = Modifier.fillMaxSize()
                     )
                 }
-                // Bottom gradient for legibility
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -73,7 +73,8 @@ fun BookPosterCard(
                             )
                         )
                 )
-                item.corner?.let { corner ->
+                val corner = item.cornerLabel
+                if (!corner.isNullOrBlank()) {
                     Surface(
                         color = MaterialTheme.colorScheme.primary,
                         shape = RoundedCornerShape(6.dp),
@@ -100,10 +101,19 @@ fun BookPosterCard(
             )
             Spacer(Modifier.height(2.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                IconTiny(Icons.Filled.PlayCircle)
+                Icon(
+                    imageVector = Icons.Filled.PlayCircle,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(12.dp)
+                )
                 Spacer(Modifier.width(4.dp))
                 Text(
-                    text = if (item.playCount > 0) Formatters.compactNumber(item.playCount) else "New",
+                    text = when {
+                        item.playCount > 0 -> Formatters.compactNumber(item.playCount) + " plays"
+                        item.episodeCount > 0 -> "${item.episodeCount} eps"
+                        else -> "New"
+                    },
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1
@@ -114,18 +124,8 @@ fun BookPosterCard(
 }
 
 @Composable
-private fun IconTiny(image: androidx.compose.ui.graphics.vector.ImageVector) {
-    androidx.compose.material3.Icon(
-        imageVector = image,
-        contentDescription = null,
-        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.size(12.dp)
-    )
-}
-
-@Composable
 fun BookRowCard(
-    item: SearchItemDto,
+    item: Drama,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -143,7 +143,7 @@ fun BookRowCard(
                     .clip(RoundedCornerShape(10.dp))
                     .background(MaterialTheme.colorScheme.surfaceVariant)
             ) {
-                if (!item.cover.isNullOrBlank()) {
+                if (item.cover.isNotBlank()) {
                     AsyncImage(
                         model = item.cover,
                         contentDescription = item.title,
@@ -162,7 +162,7 @@ fun BookRowCard(
                     overflow = TextOverflow.Ellipsis
                 )
                 Spacer(Modifier.height(4.dp))
-                if (!item.introduction.isNullOrBlank()) {
+                if (item.introduction.isNotBlank()) {
                     Text(
                         text = item.introduction,
                         style = MaterialTheme.typography.bodySmall,
@@ -173,13 +173,15 @@ fun BookRowCard(
                 }
                 Spacer(Modifier.height(6.dp))
                 Row {
-                    Text(
-                        text = if (item.playCount > 0) "${Formatters.compactNumber(item.playCount)} plays" else "New",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    if (item.episodeCount > 0) {
+                    if (item.playCount > 0) {
+                        Text(
+                            text = "${Formatters.compactNumber(item.playCount)} plays",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                         Spacer(Modifier.width(8.dp))
+                    }
+                    if (item.episodeCount > 0) {
                         Text(
                             text = "${item.episodeCount} eps",
                             style = MaterialTheme.typography.labelSmall,

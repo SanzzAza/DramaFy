@@ -1,7 +1,6 @@
 package com.sanzzaza.dramafy.ui.theme
 
 import android.app.Activity
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
@@ -12,6 +11,10 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
+/**
+ * DramaFy ships as a dark-first app. The system theme is consulted but only
+ * honoured if [respectSystemTheme] is true. Pass false to always render dark.
+ */
 private val DarkColors = darkColorScheme(
     primary = Crimson,
     onPrimary = Color.White,
@@ -56,7 +59,7 @@ private val LightColors = lightColorScheme(
 
 @Composable
 fun DramaFyTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    darkTheme: Boolean = true,
     content: @Composable () -> Unit
 ) {
     val colors = if (darkTheme) DarkColors else LightColors
@@ -66,8 +69,10 @@ fun DramaFyTheme(
             val window = (view.context as Activity).window
             window.statusBarColor = Color.Transparent.toArgb()
             window.navigationBarColor = Color.Transparent.toArgb()
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
-            WindowCompat.getInsetsController(window, view).isAppearanceLightNavigationBars = !darkTheme
+            val controller = WindowCompat.getInsetsController(window, view)
+            // Always light icons on dark background
+            controller.isAppearanceLightStatusBars = !darkTheme
+            controller.isAppearanceLightNavigationBars = !darkTheme
         }
     }
     MaterialTheme(

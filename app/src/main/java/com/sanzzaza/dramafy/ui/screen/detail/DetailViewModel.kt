@@ -4,9 +4,8 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sanzzaza.dramafy.data.local.PreferencesRepository
-import com.sanzzaza.dramafy.data.model.BookDetailDto
-import com.sanzzaza.dramafy.data.model.SearchItemDto
-import com.sanzzaza.dramafy.data.model.SeriesResponse
+import com.sanzzaza.dramafy.data.model.Drama
+import com.sanzzaza.dramafy.data.model.Episode
 import com.sanzzaza.dramafy.data.repository.DramaRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,8 +20,8 @@ import javax.inject.Inject
 data class DetailUiState(
     val isLoading: Boolean = true,
     val error: String? = null,
-    val book: BookDetailDto? = null,
-    val related: List<SearchItemDto> = emptyList()
+    val drama: Drama? = null,
+    val episodes: List<Episode> = emptyList()
 )
 
 @HiltViewModel
@@ -56,21 +55,29 @@ class DetailViewModel @Inject constructor(
     fun load() {
         _state.value = _state.value.copy(isLoading = true, error = null)
         viewModelScope.launch {
-            val result = repository.series(bookId, language)
-            result.fold(
-                onSuccess = { resp: SeriesResponse ->
+            // Try /series first (gives chapters + richer metadata)
+            val seriesResult = repository.series(bookId, language)
+            seriesResult.fold(
+                onSuccess = { (drama, eps) ->
                     _state.value = DetailUiState(
                         isLoading = false,
-                        book = resp.book,
-                        related = resp.related
+                        drama = drama,
+                        episodes = eps
                     )
                 },
-                onFailure = { t ->
-                    // Fallback to /book if /series fails
-                    val fallback = repository.book(bookId, language)
-                    fallback.fold(
-                        onSuccess = { _state.value = DetailUiState(isLoading = false, book = it) },
-                        onFailure = { _state.value = DetailUiState(isLoading = false, error = t.message ?: "Failed to load") }
+                onFailure = { seriesErr ->
+                    // Fallback to /book
+                    val bookResult = repository.bookDetail(bookId, language)
+                    bookResult.fold(
+                        onSuccess = { drama ->
+                            _state.value = DetailUiState(isLoading = false, drama = drama)
+                        },
+                        onFailure = { bookErr ->
+                            _state.value = DetailUiState(
+                                isLoading = false,
+                                error = bookErr.message ?: seriesErr.message ?: "Failed to load drama"
+                            )
+                        }
                     )
                 }
             )
@@ -78,20 +85,10 @@ class DetailViewModel @Inject constructor(
     }
 
     fun toggleBookmark() {
-        val current = _state.value.book ?: return
+        val current = _state.value.drama ?: return
         viewModelScope.launch {
-            val item = SearchItemDto(
-                id = current.id,
-                title = current.title,
-                cover = current.cover,
-                introduction = current.introduction,
-                tags = current.tags,
-                author = current.author,
-                episodeCount = current.episodeCount,
-                playCount = current.playCount,
-                rating = current.rating
-            )
-            if (isBookmarked.value) repository.removeBookmark(item.id) else repository.addBookmark(item)
+            if (isBookmarked.value) repository.removeBookmark(current.id)
+            else repository.addBookmark(current)
         }
     }
 }

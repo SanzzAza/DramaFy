@@ -12,5 +12,6 @@ data class BookmarkEntity(
     val tagsCsv: String,
     val author: String?,
     val episodeCount: Int,
+    val playCount: Long = 0L,
     val addedAt: Long = System.currentTimeMillis()
 )

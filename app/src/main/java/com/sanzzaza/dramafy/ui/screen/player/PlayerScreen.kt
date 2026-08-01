@@ -4,12 +4,21 @@ package com.sanzzaza.dramafy.ui.screen.player
 
 import android.view.ViewGroup
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -26,9 +35,12 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -41,10 +53,12 @@ import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
+import com.sanzzaza.dramafy.data.model.Episode
 import com.sanzzaza.dramafy.ui.component.ErrorState
 import com.sanzzaza.dramafy.ui.component.LoadingState
+import com.sanzzaza.dramafy.util.Formatters
 
-@OptIn(ExperimentalMaterial3Api::class, UnstableApi::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class, UnstableApi::class)
 @Composable
 fun PlayerScreen(
     onBack: () -> Unit,
@@ -61,15 +75,13 @@ fun PlayerScreen(
         }
     }
 
-    LaunchedEffect(state.sources, state.currentIndex) {
-        val sources = state.sources
-        if (sources.isNotEmpty()) {
-            val source = sources[state.currentIndex]
-            if (source.url.isNotBlank()) {
-                val item = MediaItem.fromUri(source.url)
-                player.setMediaItem(item)
-                player.prepare()
-            }
+    val currentEp = state.episodes.getOrNull(state.currentIndex)
+    LaunchedEffect(currentEp?.streamUrl) {
+        val url = currentEp?.streamUrl
+        if (!url.isNullOrBlank()) {
+            val item = MediaItem.fromUri(url)
+            player.setMediaItem(item)
+            player.prepare()
         }
     }
 
@@ -92,7 +104,7 @@ fun PlayerScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = state.title.ifBlank { "Now Playing" },
+                        text = currentEp?.let { "Episode ${it.index}" } ?: "Now Playing",
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onBackground
                     )
@@ -103,82 +115,92 @@ fun PlayerScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Transparent,
+                    containerColor = MaterialTheme.colorScheme.background,
                     navigationIconContentColor = MaterialTheme.colorScheme.onBackground,
                     titleContentColor = MaterialTheme.colorScheme.onBackground
                 )
             )
         },
-        containerColor = Color.Black
+        containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
-        Box(modifier = Modifier
-            .fillMaxSize()
-            .padding(padding)
-            .background(Color.Black)) {
-            Column(modifier = Modifier.fillMaxSize()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(16f / 9f)
-                        .background(Color.Black)
-                ) {
-                    when {
-                        state.isLoading -> LoadingState()
-                        state.error != null -> ErrorState(state.error ?: "Cannot play", onRetry = viewModel::load)
-                        state.sources.isNotEmpty() -> AndroidView(
-                            factory = { ctx ->
-                                PlayerView(ctx).apply {
-                                    layoutParams = ViewGroup.LayoutParams(
-                                        ViewGroup.LayoutParams.MATCH_PARENT,
-                                        ViewGroup.LayoutParams.MATCH_PARENT
-                                    )
-                                    useController = true
-                                    setShowBuffering(PlayerView.SHOW_BUFFERING_WHEN_PLAYING)
-                                    this.player = player
-                                }
-                            },
-                            modifier = Modifier.fillMaxSize()
-                        )
-                    }
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .background(MaterialTheme.colorScheme.background)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(9f / 16f)
+                    .background(Color.Black)
+            ) {
+                when {
+                    state.isLoading -> LoadingState()
+                    state.error != null -> ErrorState(
+                        message = state.error ?: "Cannot play",
+                        onRetry = viewModel::load
+                    )
+                    !currentEp?.streamUrl.isNullOrBlank() -> AndroidView(
+                        factory = { ctx ->
+                            PlayerView(ctx).apply {
+                                layoutParams = ViewGroup.LayoutParams(
+                                    ViewGroup.LayoutParams.MATCH_PARENT,
+                                    ViewGroup.LayoutParams.MATCH_PARENT
+                                )
+                                useController = true
+                                setShowBuffering(PlayerView.SHOW_BUFFERING_WHEN_PLAYING)
+                                this.player = player
+                            }
+                        },
+                        modifier = Modifier.fillMaxSize()
+                    )
                 }
-                if (state.sources.size > 1) {
-                    Surface(
-                        color = MaterialTheme.colorScheme.surface,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Column(modifier = Modifier.padding(12.dp)) {
-                            Text(
-                                text = "Quality",
-                                style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            androidx.compose.foundation.layout.FlowRow(
-                                horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp),
-                                verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp),
-                                modifier = Modifier.padding(top = 8.dp)
-                            ) {
-                                state.sources.forEachIndexed { idx, src ->
-                                    val selected = idx == state.currentIndex
-                                    Surface(
-                                        onClick = { viewModel.selectSource(idx) },
-                                        color = if (selected) MaterialTheme.colorScheme.primary
-                                        else MaterialTheme.colorScheme.surfaceVariant,
-                                        shape = androidx.compose.foundation.shape.RoundedCornerShape(50)
-                                    ) {
-                                        Text(
-                                            text = src.quality.ifBlank { src.format.uppercase() },
-                                            style = MaterialTheme.typography.labelMedium,
-                                            color = if (selected) MaterialTheme.colorScheme.onPrimary
-                                            else MaterialTheme.colorScheme.onSurfaceVariant,
-                                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
-                                        )
-                                    }
-                                }
+            }
+
+            if (state.episodes.isNotEmpty()) {
+                Surface(
+                    color = MaterialTheme.colorScheme.surface,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Text(
+                            text = "Episodes",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            items(state.episodes, key = { it.vid }) { ep ->
+                                EpisodeChip(
+                                    ep = ep,
+                                    selected = state.currentIndex == state.episodes.indexOf(ep),
+                                    onClick = { viewModel.selectEpisode(state.episodes.indexOf(ep)) }
+                                )
                             }
                         }
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun EpisodeChip(ep: Episode, selected: Boolean, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        color = if (selected) MaterialTheme.colorScheme.primary
+        else MaterialTheme.colorScheme.surfaceVariant,
+        shape = RoundedCornerShape(50)
+    ) {
+        Text(
+            text = "EP ${ep.index}",
+            style = MaterialTheme.typography.labelMedium,
+            color = if (selected) MaterialTheme.colorScheme.onPrimary
+            else MaterialTheme.colorScheme.onSurfaceVariant,
+            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
+        )
     }
 }

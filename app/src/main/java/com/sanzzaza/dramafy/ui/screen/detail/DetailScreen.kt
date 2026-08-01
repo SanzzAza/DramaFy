@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -51,14 +52,14 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
-import com.sanzzaza.dramafy.data.model.EpisodeDto
-import com.sanzzaza.dramafy.ui.component.BookPosterCard
+import com.sanzzaza.dramafy.data.model.Drama
+import com.sanzzaza.dramafy.data.model.Episode
 import com.sanzzaza.dramafy.ui.component.ErrorState
 import com.sanzzaza.dramafy.ui.component.LoadingState
 import com.sanzzaza.dramafy.ui.component.TagPill
 import com.sanzzaza.dramafy.util.Formatters
 
-@OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetailScreen(
     onBack: () -> Unit,
@@ -82,7 +83,8 @@ fun DetailScreen(
                         Icon(
                             imageVector = if (isBookmarked) Icons.Filled.Bookmark else Icons.Outlined.BookmarkBorder,
                             contentDescription = "Bookmark",
-                            tint = if (isBookmarked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                            tint = if (isBookmarked) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.onSurface
                         )
                     }
                 },
@@ -94,14 +96,21 @@ fun DetailScreen(
         },
         containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
-        Box(modifier = Modifier
-            .fillMaxSize()
-            .padding(padding)) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+        ) {
+            val drama = state.drama
             when {
                 state.isLoading -> LoadingState()
-                state.error != null -> ErrorState(state.error ?: "Failed to load", onRetry = viewModel::load)
-                state.book != null -> DetailContent(
-                    state = state,
+                state.error != null -> ErrorState(
+                    message = state.error ?: "Failed to load",
+                    onRetry = viewModel::load
+                )
+                drama != null -> DetailContent(
+                    drama = drama,
+                    episodes = state.episodes,
                     onPlay = onPlay
                 )
             }
@@ -111,53 +120,49 @@ fun DetailScreen(
 
 @Composable
 private fun DetailContent(
-    state: DetailUiState,
+    drama: Drama,
+    episodes: List<Episode>,
     onPlay: (String, Int) -> Unit
 ) {
-    val book = state.book ?: return
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
         contentPadding = PaddingValues(bottom = 32.dp)
     ) {
-        item { HeroCover(state) }
+        item { HeroCover(drama) }
         item {
             Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) {
                 Text(
-                    text = book.title,
+                    text = drama.title,
                     style = MaterialTheme.typography.headlineLarge,
                     color = MaterialTheme.colorScheme.onBackground
                 )
-                if (!book.author.isNullOrBlank()) {
+                if (drama.author.isNotBlank()) {
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        text = "by ${book.author}",
+                        text = "by ${drama.author}",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
                 Spacer(Modifier.height(12.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (book.playCount > 0) {
-                        StatBadge("${Formatters.compactNumber(book.playCount)} plays")
+                    if (drama.playCount > 0) {
+                        StatBadge("${Formatters.compactNumber(drama.playCount)} plays")
                         Spacer(Modifier.width(8.dp))
                     }
-                    if (book.episodeCount > 0) {
-                        StatBadge("${book.episodeCount} eps")
-                        Spacer(Modifier.width(8.dp))
-                    }
-                    if (book.rating > 0) {
-                        StatBadge("★ ${"%.1f".format(book.rating)}")
+                    if (drama.episodeCount > 0) {
+                        StatBadge("${drama.episodeCount} eps")
                     }
                 }
-                if (book.tags.isNotEmpty()) {
+                if (drama.tags.isNotEmpty()) {
                     Spacer(Modifier.height(12.dp))
-                    androidx.compose.foundation.layout.FlowRow(
+                    FlowRow(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        book.tags.take(6).forEach { TagPill(it) }
+                        drama.tags.take(6).forEach { TagPill(it) }
                     }
                 }
             }
@@ -171,7 +176,7 @@ private fun DetailContent(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Button(
-                    onClick = { onPlay(book.id, 0) },
+                    onClick = { onPlay(drama.id, 1) },
                     modifier = Modifier
                         .weight(1f)
                         .height(52.dp),
@@ -183,12 +188,12 @@ private fun DetailContent(
                 ) {
                     Icon(Icons.Filled.PlayArrow, contentDescription = null)
                     Spacer(Modifier.width(8.dp))
-                    Text("Play", fontWeight = FontWeight.SemiBold)
+                    Text("Play Episode 1", fontWeight = FontWeight.SemiBold)
                 }
             }
         }
 
-        if (book.introduction.isNotBlank()) {
+        if (drama.introduction.isNotBlank()) {
             item {
                 Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) {
                     Text(
@@ -198,7 +203,7 @@ private fun DetailContent(
                     )
                     Spacer(Modifier.height(6.dp))
                     Text(
-                        text = book.introduction,
+                        text = drama.introduction,
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 8,
@@ -208,7 +213,7 @@ private fun DetailContent(
             }
         }
 
-        if (book.episodes.isNotEmpty()) {
+        if (episodes.isNotEmpty()) {
             item {
                 Text(
                     text = "Episodes",
@@ -222,29 +227,8 @@ private fun DetailContent(
                     contentPadding = PaddingValues(horizontal = 20.dp),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    items(book.episodes, key = { it.id.ifBlank { it.index.toString() } }) { ep ->
-                        EpisodeChip(ep, onClick = { onPlay(book.id, ep.index) })
-                    }
-                }
-            }
-        }
-
-        if (state.related.isNotEmpty()) {
-            item {
-                Text(
-                    text = "You may also like",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)
-                )
-            }
-            item {
-                LazyRow(
-                    contentPadding = PaddingValues(horizontal = 20.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(state.related, key = { it.id }) { r ->
-                        BookPosterCard(item = r, onClick = { onPlay(r.id, 0) })
+                    items(episodes, key = { it.vid }) { ep ->
+                        EpisodeChip(ep, onClick = { onPlay(drama.id, ep.index) })
                     }
                 }
             }
@@ -252,24 +236,25 @@ private fun DetailContent(
     }
 }
 
+private val DetailUiState.d: Drama?
+    get() = drama
+
 @Composable
-private fun HeroCover(state: DetailUiState) {
-    val cover = state.book?.cover
+private fun HeroCover(drama: Drama) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .aspectRatio(16f / 11f)
             .background(MaterialTheme.colorScheme.surfaceVariant)
     ) {
-        if (!cover.isNullOrBlank()) {
+        if (drama.cover.isNotBlank()) {
             AsyncImage(
-                model = cover,
-                contentDescription = state.book.title,
+                model = drama.cover,
+                contentDescription = drama.title,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
             )
         }
-        // Bottom fade
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -303,12 +288,12 @@ private fun StatBadge(text: String) {
 }
 
 @Composable
-private fun EpisodeChip(ep: EpisodeDto, onClick: () -> Unit) {
+private fun EpisodeChip(ep: Episode, onClick: () -> Unit) {
     Surface(
         onClick = onClick,
         color = MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(12.dp),
-        modifier = Modifier.width(140.dp)
+        modifier = Modifier.width(130.dp)
     ) {
         Row(
             modifier = Modifier.padding(10.dp),
@@ -322,7 +307,7 @@ private fun EpisodeChip(ep: EpisodeDto, onClick: () -> Unit) {
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "${ep.index + 1}",
+                    text = "${ep.index}",
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.SemiBold
@@ -331,7 +316,7 @@ private fun EpisodeChip(ep: EpisodeDto, onClick: () -> Unit) {
             Spacer(Modifier.width(10.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "EP ${ep.index + 1}",
+                    text = "EP ${ep.index}",
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurface
                 )

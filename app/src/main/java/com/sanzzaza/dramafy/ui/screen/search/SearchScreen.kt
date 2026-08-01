@@ -5,6 +5,7 @@ package com.sanzzaza.dramafy.ui.screen.search
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -35,6 +36,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -44,7 +46,7 @@ import com.sanzzaza.dramafy.ui.component.ErrorState
 import com.sanzzaza.dramafy.ui.component.LoadingState
 import com.sanzzaza.dramafy.ui.component.TagPill
 
-@OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchScreen(
     onBack: () -> Unit,
@@ -112,7 +114,7 @@ fun SearchScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Spacer(Modifier.height(8.dp))
-                        androidx.compose.foundation.layout.FlowRow(
+                        FlowRow(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
@@ -144,10 +146,10 @@ fun SearchScreen(
                         contentPadding = PaddingValues(vertical = 8.dp),
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        items(state.results, key = { it.id }) { item ->
+                        items(state.results, key = { it.id }) { drama ->
                             BookRowCard(
-                                item = item,
-                                onClick = { onBookClick(item.id) }
+                                item = drama,
+                                onClick = { onBookClick(drama.id) }
                             )
                         }
                         if (state.hasMore) {
@@ -164,7 +166,7 @@ fun SearchScreen(
                                         text = if (state.isLoading) "Loading…" else "Load more",
                                         style = MaterialTheme.typography.labelLarge,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                        textAlign = TextAlign.Center,
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .padding(14.dp)

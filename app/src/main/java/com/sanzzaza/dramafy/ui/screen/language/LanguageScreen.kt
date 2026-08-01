@@ -1,10 +1,11 @@
 package com.sanzzaza.dramafy.ui.screen.language
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -36,7 +37,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.sanzzaza.dramafy.data.model.LanguageDto
+import com.sanzzaza.dramafy.data.model.Language
 import com.sanzzaza.dramafy.ui.component.ErrorState
 import com.sanzzaza.dramafy.ui.component.LoadingState
 
@@ -62,14 +63,16 @@ fun LanguageScreen(
         },
         containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
-        Box(modifier = Modifier
-            .fillMaxSize()
-            .padding(padding)) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+        ) {
             when (val s = state) {
                 is LanguageUiState.Loading -> LoadingState()
                 is LanguageUiState.Error -> ErrorState(s.message, onRetry = viewModel::load)
                 is LanguageUiState.Success -> LazyColumn(
-                    contentPadding = androidx.compose.foundation.layout.PaddingValues(20.dp),
+                    contentPadding = PaddingValues(20.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(s.languages, key = { it.code }) { lang ->
@@ -87,14 +90,12 @@ fun LanguageScreen(
 
 @Composable
 private fun LanguageRow(
-    language: LanguageDto,
+    language: Language,
     selected: Boolean,
     onClick: () -> Unit
 ) {
     val bg = if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
     else MaterialTheme.colorScheme.surface
-    val border = if (selected) MaterialTheme.colorScheme.primary
-    else MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
 
     Surface(
         onClick = onClick,
@@ -110,27 +111,20 @@ private fun LanguageRow(
                 .padding(horizontal = 16.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(CircleShape),
-                contentAlignment = Alignment.Center
+            Surface(
+                color = if (selected) MaterialTheme.colorScheme.primary
+                else MaterialTheme.colorScheme.surfaceVariant,
+                shape = CircleShape
             ) {
-                Surface(
-                    color = if (selected) MaterialTheme.colorScheme.primary
-                    else MaterialTheme.colorScheme.surfaceVariant,
-                    shape = CircleShape
-                ) {
-                    Text(
-                        text = language.code.uppercase().take(2),
-                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-                        color = if (selected) MaterialTheme.colorScheme.onPrimary
-                        else MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)
-                    )
-                }
+                Text(
+                    text = language.code.uppercase().take(2),
+                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                    color = if (selected) MaterialTheme.colorScheme.onPrimary
+                    else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)
+                )
             }
-            androidx.compose.foundation.layout.Spacer(Modifier.size(12.dp))
+            Spacer(Modifier.size(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = language.name.ifBlank { language.code },
@@ -139,13 +133,11 @@ private fun LanguageRow(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                if (!language.native.isNullOrBlank() && language.native != language.name) {
-                    Text(
-                        text = language.native,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+                Text(
+                    text = language.code,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
             if (selected) {
                 Icon(
