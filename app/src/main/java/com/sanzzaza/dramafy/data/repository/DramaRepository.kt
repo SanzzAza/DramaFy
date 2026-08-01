@@ -24,8 +24,9 @@ class DramaRepository @Inject constructor(
 ) {
     // -------- API --------
     suspend fun languages(): Result<List<Language>> = runCatching {
-        val resp = api.getLanguages()
-        resp.entries.map { (code, name) -> Language(code, name) }
+        val resp: com.sanzzaza.dramafy.data.model.LanguagesResponse = api.getLanguages()
+        val langs = resp.languages
+        langs.map { (code, name) -> Language(code, name) }
             .sortedBy { it.name }
     }
 
