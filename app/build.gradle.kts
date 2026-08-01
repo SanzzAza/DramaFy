@@ -25,6 +25,18 @@ android {
         buildConfigField("String", "DEFAULT_LANG", "\"en\"")
     }
 
+    // Create a release keystore on the fly for installation-friendly APKs.
+    // (For Play Store distribution, replace with a real keystore.)
+    signingConfigs {
+        create("release") {
+            val ksPath = rootProject.file("release.keystore").absolutePath
+            storeFile = file(ksPath)
+            storePassword = "dramafyrelease"
+            keyAlias = "dramafy"
+            keyPassword = "dramafyrelease"
+        }
+    }
+
     buildTypes {
         debug {
             isMinifyEnabled = false
@@ -39,8 +51,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            // Use debug signing for now so APK is installable; replace with real keystore for Play Store
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 

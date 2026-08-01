@@ -128,7 +128,9 @@ internal fun parseCategoryNames(rawJson: String): List<String> {
     return runCatching {
         val arr = lenientJson.parseToJsonElement(rawJson).jsonArray
         arr.mapNotNull { el ->
-            el.jsonObject["Name"]?.jsonPrimitive?.contentOrNull
+            runCatching {
+                el.jsonObject["Name"]?.jsonPrimitive?.contentOrNull
+            }.getOrNull()
         }.filter { it.isNotBlank() }
     }.getOrDefault(emptyList())
 }

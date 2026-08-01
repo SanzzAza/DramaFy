@@ -49,6 +49,7 @@ Thumbs.db
 keystore.properties
 *.jks
 *.keystore
+!release.keystore
 
 # Misc
 *.hprof

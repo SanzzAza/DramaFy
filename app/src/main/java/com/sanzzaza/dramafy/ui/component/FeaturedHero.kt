@@ -79,7 +79,7 @@ fun FeaturedHero(
                     Box(modifier = Modifier.fillMaxSize()) {
                         if (drama.cover.isNotBlank()) {
                             AsyncImage(
-                                model = drama.cover,
+                                model = com.sanzzaza.dramafy.util.ImageUrl.cover(drama.cover),
                                 contentDescription = drama.title,
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier.fillMaxSize()

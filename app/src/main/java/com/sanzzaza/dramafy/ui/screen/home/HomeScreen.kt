@@ -23,7 +23,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -105,7 +104,7 @@ private fun HomeContent(
     onBookClick: (String) -> Unit,
     onSearchClick: () -> Unit
 ) {
-    val featured: List<Drama> = remember(groups) { groups.firstOrNull()?.dramas?.take(5) ?: emptyList() }
+    val featured: List<Drama> = groups.firstOrNull()?.dramas?.take(5) ?: emptyList()
 
     LazyColumn(
         modifier = Modifier

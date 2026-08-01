@@ -149,7 +149,11 @@ fun PlayerScreen(
                                     ViewGroup.LayoutParams.MATCH_PARENT
                                 )
                                 useController = true
-                                setShowBuffering(PlayerView.SHOW_BUFFERING_WHEN_PLAYING)
+                                try {
+                                    setShowBuffering(PlayerView.SHOW_BUFFERING_WHEN_PLAYING)
+                                } catch (_: Throwable) {
+                                    // ignore on older API levels
+                                }
                                 this.player = player
                             }
                         },

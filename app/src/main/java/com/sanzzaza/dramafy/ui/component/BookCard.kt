@@ -57,7 +57,7 @@ fun BookPosterCard(
             ) {
                 if (item.cover.isNotBlank()) {
                     AsyncImage(
-                        model = item.cover,
+                        model = com.sanzzaza.dramafy.util.ImageUrl.cover(item.cover),
                         contentDescription = item.title,
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()
@@ -145,7 +145,7 @@ fun BookRowCard(
             ) {
                 if (item.cover.isNotBlank()) {
                     AsyncImage(
-                        model = item.cover,
+                        model = com.sanzzaza.dramafy.util.ImageUrl.cover(item.cover),
                         contentDescription = item.title,
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()

@@ -29,6 +29,7 @@ object NetworkModule {
         coerceInputValues = true
         isLenient = true
         explicitNulls = false
+        encodeDefaults = false
     }
 
     @Provides
