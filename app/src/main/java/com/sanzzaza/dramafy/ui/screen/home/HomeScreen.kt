@@ -175,15 +175,13 @@ private fun HomeContent(
             }
         }
 
-        // Remaining groups (skip empty)
+        // Remaining groups (skip empty) — render each group as a single item with Column inside
         val remainingGroups = data.groups.drop(
             if (data.groups.firstOrNull() == firstGroup && firstGroup != null) 1 else 0
         ).filter { it.books.isNotEmpty() }
-        items(items = remainingGroups, key = { it.id.ifBlank { it.name } }) { group ->
-            item {
+        items(remainingGroups, key = { it.id.ifBlank { it.name } }) { group ->
+            Column {
                 SectionHeader(title = group.name.ifBlank { "Recommended" })
-            }
-            item {
                 BookRow(
                     group = group,
                     onBookClick = onBookClick
