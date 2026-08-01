@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+
 package com.sanzzaza.dramafy.ui.screen.player
 
 import android.view.ViewGroup
