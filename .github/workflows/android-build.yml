@@ -52,7 +52,7 @@ jobs:
         run: |
           mkdir -p artifacts
           cp app/build/outputs/apk/debug/*.apk artifacts/DramaFy-debug.apk || true
-          cp app/build/outputs/apk/release/*.apk artifacts/DramaFy-release-unsigned.apk || true
+          cp app/build/outputs/apk/release/*.apk artifacts/DramaFy-release.apk || true
           cp app/build/outputs/bundle/release/*.aab artifacts/DramaFy-release.aab || true
           ls -la artifacts/
 
@@ -63,11 +63,11 @@ jobs:
           path: artifacts/DramaFy-debug.apk
           if-no-files-found: warn
 
-      - name: Upload APK (Release unsigned)
+      - name: Upload APK (Release signed)
         uses: actions/upload-artifact@v4
         with:
-          name: DramaFy-release-unsigned
-          path: artifacts/DramaFy-release-unsigned.apk
+          name: DramaFy-release
+          path: artifacts/DramaFy-release.apk
           if-no-files-found: warn
 
       - name: Upload AAB
